@@ -31,7 +31,6 @@ function App() {
         throw new Error('شہر نہیں ملا');
       }
 
-      // Using method=2 (University of Islamic Sciences, Karachi) with Hanafi school
       const times = await fetchPrayerTimes(city.latitude, city.longitude);
       setPrayerTimes(times);
     } catch (err) {
@@ -83,18 +82,18 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         
         {/* Header */}
         <header className="text-center mb-8 bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-2 jameel-font">
+          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-2" dir="rtl">
             اوقات نماز پاکستان
           </h1>
-          <p className="text-gray-600 text-lg jameel-font">
+          <p className="text-gray-600 text-lg mb-2" dir="rtl">
             جامعہ اسلامک سائنسز کراچی کے حنفی طریقہ کے مطابق
           </p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-gray-500">
             University of Islamic Sciences, Karachi - Hanafi Method
           </p>
         </header>
@@ -109,7 +108,7 @@ function App() {
               hour12: true 
             })}
           </div>
-          <div className="text-gray-600 jameel-font">
+          <div className="text-gray-600" dir="rtl">
             {currentTime.toLocaleDateString('ur-PK', {
               weekday: 'long',
               year: 'numeric',
@@ -121,22 +120,23 @@ function App() {
 
         {/* City Selection */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 jameel-font flex items-center">
-            <MapPin className="w-5 h-5 ml-2 text-emerald-600" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center" dir="rtl">
+            <MapPin className="w-5 h-5 mr-2 text-emerald-600" />
             شہر منتخب کریں
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Province Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 jameel-font">
+              <label className="block text-sm font-medium text-gray-700 mb-2" dir="rtl">
                 صوبہ
               </label>
               <select
                 value={selectedProvince}
                 onChange={(e) => handleProvinceChange(e.target.value)}
                 disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 jameel-font"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                dir="rtl"
               >
                 {provinces.map((province) => (
                   <option key={province.name} value={province.name}>
@@ -148,14 +148,15 @@ function App() {
 
             {/* City Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 jameel-font">
+              <label className="block text-sm font-medium text-gray-700 mb-2" dir="rtl">
                 شہر
               </label>
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
                 disabled={loading || !selectedProvince}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 jameel-font"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                dir="rtl"
               >
                 {currentProvince?.cities.map((city) => (
                   <option key={city.name} value={city.name}>
@@ -171,10 +172,10 @@ function App() {
             <button
               onClick={getPrayerTimes}
               disabled={loading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-reverse space-x-2 mx-auto"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center mx-auto"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="jameel-font">اوقات تازہ کریں</span>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <span dir="rtl">اوقات تازہ کریں</span>
             </button>
           </div>
         </div>
@@ -183,14 +184,14 @@ function App() {
         {loading && (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <RefreshCw className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
-            <p className="text-lg text-gray-700 jameel-font">اوقات لوڈ ہو رہے ہیں...</p>
+            <p className="text-lg text-gray-700" dir="rtl">اوقات لوڈ ہو رہے ہیں...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800 text-center jameel-font">{error}</p>
+            <p className="text-red-800 text-center" dir="rtl">{error}</p>
           </div>
         )}
 
@@ -198,7 +199,7 @@ function App() {
         {prayerTimes && !loading && (
           <div className="space-y-4">
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-center text-gray-800 mb-6 jameel-font">
+              <h2 className="text-2xl font-bold text-center text-gray-800 mb-6" dir="rtl">
                 {currentCity?.nameUrdu} کے نماز کے اوقات
               </h2>
               
@@ -217,7 +218,7 @@ function App() {
                       </div>
                       
                       {/* Prayer Name */}
-                      <h3 className="font-bold text-gray-800 jameel-font text-lg mb-2">
+                      <h3 className="font-bold text-gray-800 text-lg mb-2" dir="rtl">
                         {prayer.urdu}
                       </h3>
                       <p className="text-sm text-gray-600 mb-3">
@@ -240,18 +241,18 @@ function App() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                 <div>
-                  <h4 className="font-semibold text-gray-800 jameel-font mb-2">
+                  <h4 className="font-semibold text-gray-800 mb-2" dir="rtl">
                     عیسوی تاریخ
                   </h4>
-                  <p className="text-gray-700 jameel-font">
+                  <p className="text-gray-700">
                     {prayerTimes.data.date.readable}
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-800 jameel-font mb-2">
+                  <h4 className="font-semibold text-gray-800 mb-2" dir="rtl">
                     ہجری تاریخ
                   </h4>
-                  <p className="text-gray-700 jameel-font">
+                  <p className="text-gray-700" dir="rtl">
                     {prayerTimes.data.date.hijri.date}
                   </p>
                 </div>
@@ -263,10 +264,10 @@ function App() {
         {/* Important Information */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6 border border-blue-200">
           <div className="flex items-center mb-4">
-            <Info className="w-5 h-5 text-blue-600 ml-2" />
-            <h3 className="text-lg font-semibold text-blue-800 jameel-font">اہم معلومات</h3>
+            <Info className="w-5 h-5 text-blue-600 mr-2" />
+            <h3 className="text-lg font-semibold text-blue-800" dir="rtl">اہم معلومات</h3>
           </div>
-          <div className="space-y-2 text-sm text-blue-700 jameel-font leading-relaxed">
+          <div className="space-y-2 text-sm text-blue-700 leading-relaxed" dir="rtl">
             <p>• یہ اوقات جامعہ اسلامک سائنسز کراچی کے حنفی طریقہ کار کے مطابق ہیں۔</p>
             <p>• حنفی فقہ میں عصر اور عشاء کا وقت دیگر مذاہب سے مختلف ہے۔</p>
             <p>• نماز کے اوقات میں معمولی فرق ہو سکتا ہے جو مقام اور موسمی حالات پر منحصر ہے۔</p>
@@ -276,7 +277,7 @@ function App() {
 
         {/* Footer */}
         <footer className="mt-8 text-center text-gray-500 text-sm">
-          <p className="jameel-font">© 2025 اوقات نماز پاکستان - تمام حقوق محفوظ ہیں</p>
+          <p dir="rtl">© 2025 اوقات نماز پاکستان - تمام حقوق محفوظ ہیں</p>
           <p className="mt-1">Prayer Times Pakistan - All Rights Reserved</p>
         </footer>
       </div>

@@ -1,10 +1,3 @@
-export interface PrayerTime {
-  name: string;
-  nameUrdu: string;
-  time: string;
-  timestamp: number;
-}
-
 export interface PrayerTimesResponse {
   code: number;
   status: string;
@@ -66,7 +59,7 @@ export const fetchPrayerTimes = async (
   longitude: number
 ): Promise<PrayerTimesResponse> => {
   try {
-    // Using method=2 (University of Islamic Sciences, Karachi) and school=1 (Hanafi)
+    // Using method=2 (University of Islamic Sciences, Karachi) with school=1 (Hanafi)
     // This ensures proper Hanafi calculations for Asr and Isha prayers
     const response = await fetch(
       `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2&school=1`
@@ -93,54 +86,4 @@ export const formatTime = (timeString: string): string => {
   const formattedHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   
   return `${formattedHour}:${minute.toString().padStart(2, '0')} ${period}`;
-};
-
-export const parseTime = (timeString: string): Date => {
-  const [hours, minutes] = timeString.split(':');
-  const date = new Date();
-  date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-  return date;
-};
-
-export const getTimeRemaining = (targetTime: Date): { hours: number; minutes: number; seconds: number } => {
-  const now = new Date();
-  const diff = targetTime.getTime() - now.getTime();
-  
-  if (diff <= 0) {
-    return { hours: 0, minutes: 0, seconds: 0 };
-  }
-  
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
-  return { hours, minutes, seconds };
-};
-
-export const getNextPrayer = (prayerTimes: PrayerTime[]): PrayerTime | null => {
-  const now = new Date();
-  
-  for (const prayer of prayerTimes) {
-    const prayerTime = new Date(prayer.timestamp);
-    if (prayerTime > now) {
-      return prayer;
-    }
-  }
-  
-  // If no prayer is found for today, return the first prayer of tomorrow
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  const firstPrayer = prayerTimes[0];
-  if (firstPrayer) {
-    const tomorrowPrayer = new Date(firstPrayer.timestamp);
-    tomorrowPrayer.setDate(tomorrow.getDate());
-    
-    return {
-      ...firstPrayer,
-      timestamp: tomorrowPrayer.getTime()
-    };
-  }
-  
-  return null;
 };
