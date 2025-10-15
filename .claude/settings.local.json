@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(test -d node_modules)",
+      "Bash(npm run build)",
+      "Bash(npm install --force)",
+      "Bash(rm -rf node_modules)",
+      "Bash(npm install @rollup/rollup-linux-x64-gnu --save-optional)",
+      "Bash(test -f node_modules/@rollup/rollup-linux-x64-gnu/package.json)",
+      "Bash(NODE_PATH=/mnt/c/Users/hp/Downloads/namaz/namaz/node_modules npm run build)",
+      "Bash(npx vite build)",
+      "Bash(test -d dist)",
+      "Bash(npx cap sync android)",
+      "Bash(node node_modules/@capacitor/cli/bin/capacitor sync android)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(echo $ANDROID_HOME)",
+      "Read(//mnt/c/Users/hp/AppData/Local/Android/Sdk/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
