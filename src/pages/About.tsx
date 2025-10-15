@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, Heart, Code, Star, Sparkles } from 'lucide-react';
+import { Info, Heart, Code, Star, Sparkles, Mail, Phone, Globe } from 'lucide-react';
 
 interface AboutProps {
   darkMode: boolean;
@@ -121,6 +121,65 @@ function About({ darkMode, language }: AboutProps) {
           </p>
           <p className="text-lg drop-shadow-md text-white/85">
             Prayer Method: University of Islamic Sciences, Karachi
+          </p>
+        </div>
+      </div>
+
+      {/* Contact Information */}
+      <div className="surface-panel rounded-3xl shadow-2xl p-8 backdrop-blur-sm transition-all duration-500 hover:shadow-3xl">
+        <div className="flex items-center mb-6 justify-center">
+          <Mail className="w-8 h-8 mr-3 drop-shadow-md text-blue-500 dark:text-blue-300" />
+          <h2 className="text-3xl font-bold" dir={dir}>{t('رابطہ کریں', 'Contact Us')}</h2>
+        </div>
+
+        <div className="space-y-4 max-w-2xl mx-auto">
+          {/* WhatsApp */}
+          <a
+            href="https://wa.me/923376087139"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="chip-soft p-5 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-4"
+            data-variant="emerald"
+          >
+            <Phone className="w-6 h-6 flex-shrink-0" />
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-lg">{t('واٹس ایپ', 'WhatsApp')}</p>
+              <p className="text-sm opacity-80">+92 337 6087139</p>
+            </div>
+          </a>
+
+          {/* Email */}
+          <a
+            href="mailto:zameerahmedmehsood@gmail.com"
+            className="chip-soft p-5 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-4"
+            data-variant="sky"
+          >
+            <Mail className="w-6 h-6 flex-shrink-0" />
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-lg">{t('ای میل', 'Email')}</p>
+              <p className="text-sm opacity-80">zameerahmedmehsood@gmail.com</p>
+            </div>
+          </a>
+
+          {/* Website */}
+          <a
+            href="https://www.zameerahmed.online"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="chip-soft p-5 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-4"
+            data-variant="violet"
+          >
+            <Globe className="w-6 h-6 flex-shrink-0" />
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-lg">{t('ویب سائٹ', 'Website')}</p>
+              <p className="text-sm opacity-80">www.zameerahmed.online</p>
+            </div>
+          </a>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} dir={dir}>
+            {t('کسی بھی سوال یا مشورے کے لیے بلا جھجھک رابطہ کریں', 'Feel free to reach out for any questions or suggestions')}
           </p>
         </div>
       </div>
