@@ -151,6 +151,8 @@ function Home({
   const setShowDuas = setShowDuasProp || setShowDuasLocal;
 
   const [qiblaDirection, setQiblaDirection] = useState<number | null>(null);
+  const [deviceHeading, setDeviceHeading] = useState<number>(0);
+  const [compassSupported, setCompassSupported] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showRamadan, setShowRamadan] = useState(false);
   const [isRamadan, setIsRamadan] = useState(false);
@@ -460,6 +462,56 @@ function Home({
       registerDetectLocation(detectLocation);
     }
   }, [registerDetectLocation]);
+
+  // Device Orientation for Compass
+  useEffect(() => {
+    if (!showQibla) return;
+
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      if (event.alpha !== null) {
+        // Alpha gives the compass heading (0-360 degrees)
+        // We need to account for device orientation
+        let heading = event.alpha;
+
+        // Adjust for screen orientation
+        if (window.screen && (window.screen.orientation || (window.screen as any).mozOrientation || (window.screen as any).msOrientation)) {
+          const screenOrientation = window.screen.orientation?.angle || 0;
+          heading = (heading + screenOrientation) % 360;
+        }
+
+        setDeviceHeading(heading);
+      } else {
+        setCompassSupported(false);
+      }
+    };
+
+    // Check if DeviceOrientationEvent is supported
+    if (typeof DeviceOrientationEvent !== 'undefined') {
+      // For iOS 13+ devices, request permission
+      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        (DeviceOrientationEvent as any).requestPermission()
+          .then((permissionState: string) => {
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation, true);
+            } else {
+              setCompassSupported(false);
+            }
+          })
+          .catch(() => {
+            setCompassSupported(false);
+          });
+      } else {
+        // For non-iOS devices or older iOS versions
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
+    } else {
+      setCompassSupported(false);
+    }
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation, true);
+    };
+  }, [showQibla]);
 
   // Dua Collection
   const duas = [
@@ -904,24 +956,94 @@ function Home({
               <h3 className="text-2xl font-bold" dir={dir}>{t('قبلہ کا رُخ', 'Qibla direction')}</h3>
               <button onClick={() => setShowQibla(false)} className={`text-2xl ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>×</button>
             </div>
-            <div className="text-center">
-              <div className="relative w-64 h-64 mx-auto mb-4">
-                <div className={`absolute inset-0 rounded-full border-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
-                <div
-                  className="absolute inset-0 flex items-center justify-center"
-                  style={{ transform: `rotate(${qiblaDirection}deg)` }}
-                >
-                  <Navigation className={`w-16 h-16 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} style={{ transform: 'rotate(-45deg)' }} />
-                </div>
-                <div className={`absolute top-2 left-1/2 transform -translate-x-1/2 font-bold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>N</div>
+
+            {!compassSupported && (
+              <div className={`mb-4 p-4 rounded-lg ${darkMode ? 'bg-yellow-900/30 border-yellow-700' : 'bg-yellow-50 border-yellow-200'} border`}>
+                <p className={`text-sm ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`} dir={dir}>
+                  {t('آپ کا ڈیوائس کمپاس کو سپورٹ نہیں کرتا۔ براہ کرم اپنے فون کو دستی طور پر گھمائیں۔', 'Your device does not support compass. Please rotate your phone manually.')}
+                </p>
               </div>
-              <p className="text-2xl font-bold mb-2" dir={dir}>{Math.round(qiblaDirection)}°</p>
-              <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} dir={dir}>
-                {t('یہ رُخ قبلہ کی طرف ہے', 'This orientation points to the Qibla')}
-              </p>
-              <p className={`text-sm mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`} dir={dir}>
-                {t('اپنے فون کو افقی رکھیں اور گھمائیں', 'Hold your phone flat and rotate to align')}
-              </p>
+            )}
+
+            <div className="text-center">
+              {/* Compass Circle */}
+              <div className="relative w-72 h-72 mx-auto mb-4">
+                {/* Outer Circle */}
+                <div className={`absolute inset-0 rounded-full border-8 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
+
+                {/* Cardinal Directions */}
+                <div className={`absolute top-2 left-1/2 transform -translate-x-1/2 font-bold text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>N</div>
+                <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 font-bold text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>S</div>
+                <div className={`absolute left-2 top-1/2 transform -translate-y-1/2 font-bold text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>W</div>
+                <div className={`absolute right-2 top-1/2 transform -translate-y-1/2 font-bold text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>E</div>
+
+                {/* Rotating Compass Base (rotates with device) */}
+                <div
+                  className="absolute inset-0 transition-transform duration-300"
+                  style={{ transform: `rotate(${-deviceHeading}deg)` }}
+                >
+                  {/* Degree Marks */}
+                  {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+                    <div
+                      key={deg}
+                      className="absolute w-1 h-3 bg-gray-400 left-1/2 top-0 transform -translate-x-1/2"
+                      style={{
+                        transformOrigin: '50% 144px',
+                        transform: `translateX(-50%) rotate(${deg}deg)`
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Qibla Direction Needle (points to Qibla, adjusted for device heading) */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center transition-transform duration-300"
+                  style={{ transform: `rotate(${qiblaDirection - deviceHeading}deg)` }}
+                >
+                  <div className="flex flex-col items-center">
+                    <Navigation
+                      className={`w-20 h-20 ${darkMode ? 'text-amber-400' : 'text-amber-600'} drop-shadow-lg`}
+                      style={{ transform: 'rotate(-45deg)' }}
+                    />
+                    <div className={`mt-2 px-3 py-1 rounded-full text-xs font-bold ${darkMode ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-800'}`}>
+                      {t('قبلہ', 'Qibla')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Center Dot */}
+                <div className={`absolute top-1/2 left-1/2 w-4 h-4 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${darkMode ? 'bg-amber-400' : 'bg-amber-600'}`}></div>
+              </div>
+
+              {/* Direction Info */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} dir={dir}>
+                    {t('قبلہ کا زاویہ', 'Qibla angle')}
+                  </p>
+                  <p className={`text-2xl font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
+                    {Math.round(qiblaDirection)}°
+                  </p>
+                </div>
+                <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} dir={dir}>
+                    {t('آپ کا رخ', 'Your heading')}
+                  </p>
+                  <p className={`text-2xl font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                    {Math.round(deviceHeading)}°
+                  </p>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className={`p-4 rounded-xl ${darkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-200'} border`}>
+                <p className={`text-sm font-semibold mb-2 ${darkMode ? 'text-emerald-300' : 'text-emerald-800'}`} dir={dir}>
+                  {t('کیسے استعمال کریں:', 'How to use:')}
+                </p>
+                <p className={`text-sm ${darkMode ? 'text-emerald-400' : 'text-emerald-700'}`} dir={dir}>
+                  {t('اپنے فون کو افقی رکھیں اور گھمائیں۔ جب سنہری تیر شمال (N) کی طرف اشارہ کرے تو آپ قبلہ کی طرف ہیں۔', 'Hold your phone flat and rotate. When the golden arrow points to North (N), you are facing Qibla.')}
+                </p>
+              </div>
             </div>
           </div>
         )}
