@@ -1,287 +1,360 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Clock, RefreshCw, Info, Sunrise, Sun, Sunset, Moon } from 'lucide-react';
-import { provinces } from './data/cities';
-import { fetchPrayerTimes, PrayerTimesResponse, formatTime } from './services/prayerTimesApi';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Home as HomeIcon, Info, Settings as SettingsIcon, Menu, X, Sun, Moon, Bell, BellOff, Plus, Navigation as NavigationIcon, MapPin, BookOpen, BookMarked } from 'lucide-react';
+import Home from './pages/Home';
+import About from './pages/About';
+import Settings from './pages/Settings';
+import QuranReader from './pages/QuranReader';
+import HadithCollection from './pages/HadithCollection';
 
-function App() {
-  const [selectedProvince, setSelectedProvince] = useState('Punjab');
-  const [selectedCity, setSelectedCity] = useState('Lahore');
-  const [prayerTimes, setPrayerTimes] = useState<PrayerTimesResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [currentTime, setCurrentTime] = useState(new Date());
+function NavBar({ darkMode, setDarkMode, notificationsEnabled, setNotificationsEnabled, onTasbihClick, onQiblaClick, onDuasClick, onLocationClick, language }: {
+  darkMode: boolean;
+  setDarkMode: (value: boolean) => void;
+  notificationsEnabled: boolean;
+  setNotificationsEnabled: (value: boolean) => void;
+  onTasbihClick?: () => void;
+  onQiblaClick?: () => void;
+  onDuasClick?: () => void;
+  onLocationClick?: () => void;
+  language: 'ur' | 'en';
+}) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const isEnglish = language === 'en';
+  const dir = isEnglish ? 'ltr' : 'rtl';
 
-  // Update current time every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const getPrayerTimes = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const province = provinces.find(p => p.name === selectedProvince);
-      const city = province?.cities.find(c => c.name === selectedCity);
-      
-      if (!city) {
-        throw new Error('شہر نہیں ملا');
-      }
-
-      const times = await fetchPrayerTimes(city.latitude, city.longitude);
-      setPrayerTimes(times);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'اوقات حاصل کرنے میں خرابی ہوئی');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getPrayerTimes();
-  }, [selectedCity, selectedProvince]);
-
-  const handleProvinceChange = (province: string) => {
-    setSelectedProvince(province);
-    const firstCity = provinces.find(p => p.name === province)?.cities[0];
-    if (firstCity) {
-      setSelectedCity(firstCity.name);
-    }
-  };
-
-  const currentProvince = provinces.find(p => p.name === selectedProvince);
-  const currentCity = currentProvince?.cities.find(c => c.name === selectedCity);
-
-  const getPrayerIcon = (prayerName: string) => {
-    const iconProps = { className: "w-6 h-6" };
-    switch (prayerName) {
-      case 'Fajr':
-        return <Sunrise {...iconProps} className="w-6 h-6 text-blue-600" />;
-      case 'Dhuhr':
-        return <Sun {...iconProps} className="w-6 h-6 text-yellow-600" />;
-      case 'Asr':
-        return <Sun {...iconProps} className="w-6 h-6 text-orange-600" />;
-      case 'Maghrib':
-        return <Sunset {...iconProps} className="w-6 h-6 text-red-600" />;
-      case 'Isha':
-        return <Moon {...iconProps} className="w-6 h-6 text-indigo-600" />;
-      default:
-        return <Clock {...iconProps} />;
-    }
-  };
-
-  const prayerNames = [
-    { english: 'Fajr', urdu: 'فجر', emoji: '🌅' },
-    { english: 'Dhuhr', urdu: 'ظہر', emoji: '☀️' },
-    { english: 'Asr', urdu: 'عصر', emoji: '🌇' },
-    { english: 'Maghrib', urdu: 'مغرب', emoji: '🌆' },
-    { english: 'Isha', urdu: 'عشاء', emoji: '🌙' }
+  const navItems = [
+    { path: '/', icon: HomeIcon, label: 'ہوم', labelEn: 'Home' },
+    { path: '/quran', icon: BookOpen, label: 'قرآن', labelEn: 'Quran' },
+    { path: '/hadith', icon: BookMarked, label: 'حدیث', labelEn: 'Hadith' },
+    { path: '/about', icon: Info, label: 'تعارف', labelEn: 'About' },
+    { path: '/settings', icon: SettingsIcon, label: 'ترتیبات', labelEn: 'Settings' }
   ];
 
+  const isActive = (path: string) => location.pathname === path;
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+      } else {
+        setNotificationsEnabled(false);
+        window.alert(isEnglish ? 'Please allow notifications in your browser settings.' : 'براہ کرم اپنے براؤزر میں نوٹیفکیشن کی اجازت دیں۔');
+      }
+    } else {
+      setNotificationsEnabled(true);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        
-        {/* Header */}
-        <header className="text-center mb-8 bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-700 mb-2" dir="rtl">
-            اوقات نماز پاکستان
-          </h1>
-          <p className="text-gray-600 text-lg mb-2" dir="rtl">
-            جامعہ اسلامک سائنسز کراچی کے حنفی طریقہ کے مطابق
-          </p>
-          <p className="text-sm text-gray-500">
-            University of Islamic Sciences, Karachi - Hanafi Method
-          </p>
-        </header>
+    <>
+      {/* Top Navbar */}
+      <nav className="navbar-surface fixed top-0 left-0 right-0 z-50 backdrop-blur-xl transition-all duration-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo/Title */}
+            <Link to="/" className="flex items-center gap-3 hover:scale-105 transition-transform duration-300">
+              <div className={`text-2xl font-bold drop-shadow-md ${darkMode ? 'text-white' : 'text-gray-900'}`} dir={dir}>
+                {isEnglish ? 'Prayer Times' : 'اوقات نماز'}
+              </div>
+              <span className={`hidden sm:block text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} dir={dir}>
+                {isEnglish ? 'Schedule & Tools' : 'شیڈول اور مددگار فیچرز'}
+              </span>
+            </Link>
 
-        {/* Current Time */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 text-center">
-          <div className="text-2xl font-bold text-emerald-700 mb-1">
-            {currentTime.toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
-              minute: '2-digit', 
-              second: '2-digit',
-              hour12: true 
-            })}
-          </div>
-          <div className="text-gray-600" dir="rtl">
-            {currentTime.toLocaleDateString('ur-PK', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </div>
-        </div>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-2">
+              {/* Page Links */}
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
 
-        {/* City Selection */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center" dir="rtl">
-            <MapPin className="w-5 h-5 mr-2 text-emerald-600" />
-            شہر منتخب کریں
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Province Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2" dir="rtl">
-                صوبہ
-              </label>
-              <select
-                value={selectedProvince}
-                onChange={(e) => handleProvinceChange(e.target.value)}
-                disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                dir="rtl"
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 ${active ? 'navbar-link navbar-link-active shadow-lg' : 'navbar-link'}`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? item.labelEn : item.label}</span>
+                  </Link>
+                );
+              })}
+
+              {/* Divider */}
+              <div className={`h-8 w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} mx-2`}></div>
+
+              {/* Feature Buttons */}
+              {location.pathname === '/' && (
+                <>
+                  <button
+                    onClick={onTasbihClick}
+                    className="icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+                    data-variant="emerald"
+                    title={language === 'en' ? 'Tasbih' : 'تسبیح'}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={onQiblaClick}
+                    className="icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+                    data-variant="amber"
+                    title={language === 'en' ? 'Qibla' : 'قبلہ'}
+                  >
+                    <NavigationIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={onDuasClick}
+                    className="icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+                    data-variant="violet"
+                    title={language === 'en' ? 'Duas' : 'دعائیں'}
+                  >
+                    <Info className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={onLocationClick}
+                    className="icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+                    data-variant="sky"
+                    title={language === 'en' ? 'GPS Location' : 'GPS مقام'}
+                  >
+                    <MapPin className="w-5 h-5" />
+                  </button>
+
+                  {/* Divider */}
+                  <div className={`h-8 w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} mx-2`}></div>
+                </>
+              )}
+
+              {/* Dark Mode & Notifications */}
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+                title={language === 'en' ? (darkMode ? 'Light Mode' : 'Dark Mode') : (darkMode ? 'لائٹ موڈ' : 'ڈارک موڈ')}
               >
-                {provinces.map((province) => (
-                  <option key={province.name} value={province.name}>
-                    {province.nameUrdu}
-                  </option>
-                ))}
-              </select>
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={() => {
+                  if (notificationsEnabled) {
+                    setNotificationsEnabled(false);
+                  } else {
+                    requestNotificationPermission();
+                  }
+                }}
+                className="icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+                title={language === 'en' ? (notificationsEnabled ? 'Notifications On' : 'Notifications Off') : (notificationsEnabled ? 'نوٹیفکیشنز آن' : 'نوٹیفکیشنز آف')}
+              >
+                {notificationsEnabled ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+              </button>
             </div>
 
-            {/* City Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2" dir="rtl">
-                شہر
-              </label>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                disabled={loading || !selectedProvince}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                dir="rtl"
-              >
-                {currentProvince?.cities.map((city) => (
-                  <option key={city.name} value={city.name}>
-                    {city.nameUrdu}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Refresh Button */}
-          <div className="mt-4 text-center">
+            {/* Mobile Menu Button */}
             <button
-              onClick={getPrayerTimes}
-              disabled={loading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center mx-auto"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden icon-button p-2 rounded-xl transition-all duration-300 hover:scale-110"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              <span dir="rtl">اوقات تازہ کریں</span>
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <RefreshCw className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
-            <p className="text-lg text-gray-700" dir="rtl">اوقات لوڈ ہو رہے ہیں...</p>
-          </div>
-        )}
+        {/* Mobile Menu Dropdown */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-emerald-100/60 bg-white/95 dark:border-slate-800/80 dark:bg-slate-950/95">
+            <div className="px-4 py-3 space-y-1">
+              {/* Page Links */}
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800 text-center" dir="rtl">{error}</p>
-          </div>
-        )}
-
-        {/* Prayer Times Display */}
-        {prayerTimes && !loading && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-center text-gray-800 mb-6" dir="rtl">
-                {currentCity?.nameUrdu} کے نماز کے اوقات
-              </h2>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {prayerNames.map((prayer, index) => {
-                  const time = prayerTimes.data.timings[prayer.english as keyof typeof prayerTimes.data.timings];
-                  return (
-                    <div
-                      key={prayer.english}
-                      className="bg-gray-50 rounded-lg p-4 text-center border border-gray-200 hover:shadow-md transition-shadow"
-                    >
-                      {/* Prayer Icon and Emoji */}
-                      <div className="flex items-center justify-center mb-3">
-                        {getPrayerIcon(prayer.english)}
-                        <span className="text-2xl ml-2">{prayer.emoji}</span>
-                      </div>
-                      
-                      {/* Prayer Name */}
-                      <h3 className="font-bold text-gray-800 text-lg mb-2" dir="rtl">
-                        {prayer.urdu}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-3">
-                        {prayer.english}
-                      </p>
-                      
-                      {/* Prayer Time */}
-                      <div className="bg-white rounded-md p-3 border">
-                        <p className="text-xl font-bold text-emerald-700">
-                          {formatTime(time)}
-                        </p>
-                      </div>
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${active ? 'navbar-link navbar-link-active shadow-md' : 'navbar-link'}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <div className="flex-1">
+                      <p className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? item.labelEn : item.label}</p>
+                      <p className="text-xs opacity-75">{language === 'en' ? item.label : item.labelEn}</p>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  </Link>
+                );
+              })}
 
-            {/* Date Information */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-2" dir="rtl">
-                    عیسوی تاریخ
-                  </h4>
-                  <p className="text-gray-700">
-                    {prayerTimes.data.date.readable}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-2" dir="rtl">
-                    ہجری تاریخ
-                  </h4>
-                  <p className="text-gray-700" dir="rtl">
-                    {prayerTimes.data.date.hijri.date}
-                  </p>
-                </div>
-              </div>
+              {/* Feature Buttons (Mobile) */}
+              {location.pathname === '/' && (
+                <>
+                  <div className="my-2 border-t border-emerald-100/60 dark:border-white/10"></div>
+                  <button
+                    onClick={() => { onTasbihClick?.(); setIsMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all chip-soft hover:translate-x-1"
+                    data-variant="emerald"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? 'Tasbih' : 'تسبیح'}</span>
+                  </button>
+                  <button
+                    onClick={() => { onQiblaClick?.(); setIsMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all chip-soft hover:translate-x-1"
+                    data-variant="amber"
+                  >
+                    <NavigationIcon className="w-5 h-5" />
+                    <span className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? 'Qibla' : 'قبلہ'}</span>
+                  </button>
+                  <button
+                    onClick={() => { onDuasClick?.(); setIsMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all chip-soft hover:translate-x-1"
+                    data-variant="violet"
+                  >
+                    <Info className="w-5 h-5" />
+                    <span className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? 'Duas' : 'دعائیں'}</span>
+                  </button>
+                  <button
+                    onClick={() => { onLocationClick?.(); setIsMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all chip-soft hover:translate-x-1"
+                    data-variant="sky"
+                  >
+                    <MapPin className="w-5 h-5" />
+                    <span className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? 'GPS Location' : 'GPS مقام'}</span>
+                  </button>
+                </>
+              )}
+
+              {/* Settings */}
+              <div className="my-2 border-t border-emerald-100/60 dark:border-white/10"></div>
+              <button
+                onClick={() => { setDarkMode(!darkMode); setIsMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all chip-soft hover:translate-x-1"
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? (darkMode ? 'Light Mode' : 'Dark Mode') : (darkMode ? 'لائٹ موڈ' : 'ڈارک موڈ')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (notificationsEnabled) {
+                    setNotificationsEnabled(false);
+                  } else {
+                    requestNotificationPermission();
+                  }
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all chip-soft hover:translate-x-1"
+              >
+                {notificationsEnabled ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+                <span className="font-semibold" dir={language === 'en' ? 'ltr' : 'rtl'}>{language === 'en' ? (notificationsEnabled ? 'Notifications On' : 'Notifications Off') : (notificationsEnabled ? 'نوٹیفکیشنز آن' : 'نوٹیفکیشنز آف')}</span>
+              </button>
             </div>
           </div>
         )}
+      </nav>
 
-        {/* Important Information */}
-        <div className="mt-8 bg-blue-50 rounded-lg p-6 border border-blue-200">
-          <div className="flex items-center mb-4">
-            <Info className="w-5 h-5 text-blue-600 mr-2" />
-            <h3 className="text-lg font-semibold text-blue-800" dir="rtl">اہم معلومات</h3>
-          </div>
-          <div className="space-y-2 text-sm text-blue-700 leading-relaxed" dir="rtl">
-            <p>• یہ اوقات جامعہ اسلامک سائنسز کراچی کے حنفی طریقہ کار کے مطابق ہیں۔</p>
-            <p>• حنفی فقہ میں عصر اور عشاء کا وقت دیگر مذاہب سے مختلف ہے۔</p>
-            <p>• نماز کے اوقات میں معمولی فرق ہو سکتا ہے جو مقام اور موسمی حالات پر منحصر ہے۔</p>
-            <p>• برائے کرم اپنے مقامی مسجد سے بھی اوقات کی تصدیق کریں۔</p>
-          </div>
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/20 z-40 mt-16"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function AppContent() {
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+
+  const [language, setLanguage] = useState<'ur' | 'en'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('language');
+      return stored === 'en' ? 'en' : 'ur';
+    }
+    return 'ur';
+  });
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem('notificationsEnabled') === 'true';
+    }
+    return false;
+  });
+  const [azanSound, setAzanSound] = useState(() => {
+    return localStorage.getItem('azanSound') || 'classic';
+  });
+
+  // Feature toggle states (lifted from Home)
+  const [showTasbih, setShowTasbih] = useState(false);
+  const [showQibla, setShowQibla] = useState(false);
+  const [showDuas, setShowDuas] = useState(false);
+
+  // Store ref to detectLocation function from Home
+  const detectLocationRef = React.useRef<(() => void) | null>(null);
+
+  // Save dark mode preference
+  React.useEffect(() => {
+    localStorage.setItem('darkMode', darkMode.toString());
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  React.useEffect(() => {
+    localStorage.setItem('azanSound', azanSound);
+  }, [azanSound]);
+
+  useEffect(() => {
+    window.localStorage.setItem('notificationsEnabled', notificationsEnabled ? 'true' : 'false');
+  }, [notificationsEnabled]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('dir', language === 'en' ? 'ltr' : 'rtl');
+    document.documentElement.setAttribute('lang', language === 'en' ? 'en' : 'ur');
+  }, [language]);
+
+  useEffect(() => {
+    window.localStorage.setItem('language', language);
+  }, [language]);
+
+  return (
+    <div className="min-h-screen transition-colors duration-500 relative">
+      <NavBar
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        notificationsEnabled={notificationsEnabled}
+        setNotificationsEnabled={setNotificationsEnabled}
+        onTasbihClick={() => setShowTasbih(true)}
+        onQiblaClick={() => setShowQibla(true)}
+        onDuasClick={() => setShowDuas(true)}
+        onLocationClick={() => detectLocationRef.current?.()}
+        language={language}
+      />
+
+      {/* Main Content with top padding for navbar */}
+      <div className="pt-16 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Routes>
+            <Route path="/" element={<Home darkMode={darkMode} setDarkMode={setDarkMode} notificationsEnabled={notificationsEnabled} setNotificationsEnabled={setNotificationsEnabled} azanSound={azanSound} language={language} showTasbih={showTasbih} setShowTasbih={setShowTasbih} showQibla={showQibla} setShowQibla={setShowQibla} showDuas={showDuas} setShowDuas={setShowDuas} registerDetectLocation={(fn) => { detectLocationRef.current = fn; }} />} />
+            <Route path="/quran" element={<QuranReader darkMode={darkMode} language={language} />} />
+            <Route path="/hadith" element={<HadithCollection darkMode={darkMode} language={language} />} />
+            <Route path="/about" element={<About darkMode={darkMode} language={language} />} />
+            <Route path="/settings" element={<Settings darkMode={darkMode} setDarkMode={setDarkMode} notificationsEnabled={notificationsEnabled} setNotificationsEnabled={setNotificationsEnabled} azanSound={azanSound} setAzanSound={setAzanSound} language={language} setLanguage={setLanguage} />} />
+          </Routes>
         </div>
-
-        {/* Footer */}
-        <footer className="mt-8 text-center text-gray-500 text-sm">
-          <p dir="rtl">© 2025 اوقات نماز پاکستان - تمام حقوق محفوظ ہیں</p>
-          <p className="mt-1">Prayer Times Pakistan - All Rights Reserved</p>
-        </footer>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

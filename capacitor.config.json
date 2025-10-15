@@ -1,0 +1,6 @@
+{
+  "appId": "com.namaz.app",
+  "appName": "Namaz App",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
